@@ -1,0 +1,11 @@
+{
+    "log": {
+        "log_file": "logs/data_transfer.log",
+        "log_to_file": true,
+        "log_to_kafka": false,
+        "kafka_bootstrap_servers": [
+            "localhost:9092"
+        ],
+        "kafka_topic": "logs"
+    }
+}
