@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Pacote de logging para uso interno da empresa, proporcionando uma interface de log simples e direta. Suporta gravação de logs em arquivos, saída padrão de erro (stderr) e integração com o Kafka para distribuição em um ambiente de mensageria. Configurável para diferentes ambientes como desenvolvimento e produção através de arquivos JSON."
 authors = ["Vinicius Piassa <vinicius@moniari.com.br>"]
 readme = "README.md"
-package-mode = false
+packages = [
+    { include = "moniari_log", from = "src" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
