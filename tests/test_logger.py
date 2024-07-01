@@ -2,7 +2,7 @@ import unittest
 import os
 import json
 import shutil
-from src.logger import MoniariLog
+from src.moniari_log.logger import MoniariLog
 
 class TestMoniariLog(unittest.TestCase):
 
