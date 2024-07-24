@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "moniari-log"
-version = "0.1.1"
+version = "0.1.2"
 description = "Pacote de logging para uso interno da empresa, proporcionando uma interface de log simples e direta. Suporta gravação de logs em arquivos, saída padrão de erro (stderr) e integração com o Kafka para distribuição em um ambiente de mensageria. Configurável para diferentes ambientes como desenvolvimento e produção através de arquivos JSON."
 authors = ["Vinicius Piassa <vinicius@moniari.com.br>"]
 readme = "README.md"

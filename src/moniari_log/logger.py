@@ -16,17 +16,18 @@ class MoniariLog:
 
     def __init__(self, config_file):
         self.config = load_config(config_file)
+        self.logger_name = self.config.get('logger_name', __name__)
         self.setup_logging()
 
     def setup_logging(self):
         """
         Configura os handlers de logging com base nas configurações carregadas.
         """
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(self.logger_name)
         self.logger.setLevel(logging.DEBUG)
 
         formatter = colorlog.ColoredFormatter(
-            "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            "%(log_color)s%(asctime)s - [%(name)s] - %(levelname)s - %(message)s",
             datefmt=None,
             reset=True,
             log_colors={
@@ -128,5 +129,7 @@ class MoniariLog:
         """
         if hasattr(self, 'kafka_producer'):
             self.kafka_producer.close()
+        for handler in self.logger.handlers:
+            handler.close()
         self.logger.handlers.clear()
         logging.shutdown()
