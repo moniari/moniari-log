@@ -17,6 +17,7 @@ class MoniariLog:
     def __init__(self, config_file):
         self.config = load_config(config_file)
         self.logger_name = self.config.get('logger_name', __name__)
+        self.log_level = self.config.get('log_level', 'DEBUG').upper()
         self.setup_logging()
 
     def setup_logging(self):
@@ -24,7 +25,7 @@ class MoniariLog:
         Configura os handlers de logging com base nas configurações carregadas.
         """
         self.logger = logging.getLogger(self.logger_name)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(getattr(logging, self.log_level, logging.DEBUG))
 
         formatter = colorlog.ColoredFormatter(
             "%(log_color)s%(asctime)s - [%(name)s] - %(levelname)s - %(message)s",

@@ -37,6 +37,7 @@ def load_config(config_file):
     config['kafka_topic'] = os.getenv('KAFKA_TOPIC')
     config['log_to_stderr'] = get_env_bool('LOG_TO_STDERR', default=True)
     config['logger_name'] = os.getenv('LOGGER_NAME')
+    config['log_level'] = os.getenv('LOG_LEVEL')
 
     try:
         with open(config_file, 'r', encoding='utf-8') as file:
@@ -49,6 +50,7 @@ def load_config(config_file):
             config['kafka_topic'] = config['kafka_topic'] if config['kafka_topic'] is not None else file_config.get('kafka_topic', config['kafka_topic'])
             config['log_to_stderr'] = config['log_to_stderr'] if config['log_to_stderr'] is not None else file_config.get('log_to_stderr', config['log_to_stderr'])
             config['logger_name'] = config['logger_name'] if config['logger_name'] is not None else file_config.get('logger_name', config['logger_name'])
+            config['log_level'] = config['log_level'] if config['log_level'] is not None else file_config.get('log_level', config['log_level'])
 
     except FileNotFoundError:
         config['log_to_stderr'] = True
