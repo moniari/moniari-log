@@ -56,8 +56,9 @@ class TestMoniariLog(unittest.TestCase):
         self.assertTrue(os.path.isfile(self.log_file), f"Arquivo de log {self.log_file} não foi criado.")
         self._check_log_contents('ERROR', 'This is an error message for file logging')
 
+    @patch('time.time', return_value=1692625286.295)
     @patch('src.moniari_log.logger.KafkaProducer')
-    def test_info_log_to_kafka(self, MockKafkaProducer):
+    def test_info_log_to_kafka(self, MockKafkaProducer, mock_time):
         """
         Testa se uma mensagem de log INFO é enviada corretamente para o Kafka.
         """
@@ -65,14 +66,18 @@ class TestMoniariLog(unittest.TestCase):
         self._set_log_config(log_to_file=False, log_to_kafka=True)
         self.logger = MoniariLog(config_file=self.config_file)
         self.logger.info('This is an info message for Kafka logging')
+
+        expected_message = '2023-08-21 10:41:26,295 - [moniari_log] - INFO - This is an info message for Kafka logging'
+
         mock_producer.send.assert_called_once_with(self.logger.kafka_topic, {
             'level': 'info',
-            'message': 'This is an info message for Kafka logging'
+            'message': expected_message
         })
         self.logger.close()
 
+    @patch('time.time', return_value=1692625286.295)
     @patch('src.moniari_log.logger.KafkaProducer')
-    def test_error_log_to_kafka(self, MockKafkaProducer):
+    def test_error_log_to_kafka(self, MockKafkaProducer, mock_time):
         """
         Testa se uma mensagem de log ERROR é enviada corretamente para o Kafka.
         """
@@ -80,9 +85,12 @@ class TestMoniariLog(unittest.TestCase):
         self._set_log_config(log_to_file=False, log_to_kafka=True)
         self.logger = MoniariLog(config_file=self.config_file)
         self.logger.error('This is an error message for Kafka logging')
+
+        expected_message = '2023-08-21 10:41:26,295 - [moniari_log] - ERROR - This is an error message for Kafka logging'
+
         mock_producer.send.assert_called_once_with(self.logger.kafka_topic, {
             'level': 'error',
-            'message': 'This is an error message for Kafka logging'
+            'message': expected_message
         })
         self.logger.close()
 
@@ -132,8 +140,6 @@ class TestMoniariLog(unittest.TestCase):
             for dirname in dirnames:
                 if dirname == '__pycache__':
                     shutil.rmtree(os.path.join(dirpath, dirname))
-        
-        src_dir = os.path
 
 if __name__ == '__main__':
     unittest.main()

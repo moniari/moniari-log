@@ -10,6 +10,36 @@ if sys.version_info >= (3, 12, 0):
     sys.modules['kafka.vendor.six.moves'] = six.moves
 from kafka import KafkaProducer
 
+class KafkaLoggingHandler(logging.Handler):
+    """
+    Handler personalizado para enviar logs para o Kafka.
+
+    Args:
+        kafka_producer (KafkaProducer): Instância do KafkaProducer para enviar mensagens.
+        kafka_topic (str): Nome do tópico Kafka para onde as mensagens serão enviadas.
+    """
+
+    def __init__(self, kafka_producer, kafka_topic):
+        super().__init__()
+        self.kafka_producer = kafka_producer
+        self.kafka_topic = kafka_topic
+
+    def emit(self, record):
+        """
+        Envia o registro de log formatado para o Kafka.
+
+        Args:
+            record (LogRecord): Registro de log a ser enviado.
+        """
+        try:
+            message = self.format(record)
+            self.kafka_producer.send(
+                self.kafka_topic, 
+                {'level': record.levelname.lower(), 'message': message}
+            )
+        except Exception:
+            self.handleError(record)
+
 class MoniariLog:
     """
     Classe para configuração e gerenciamento de logging.
@@ -22,6 +52,8 @@ class MoniariLog:
         self.config = load_config(config_file)
         self.logger_name = self.config.get('logger_name', __name__)
         self.log_level = self.config.get('log_level', 'DEBUG').upper()
+        self.kafka_producer = None
+        self.kafka_topic = None
         self.setup_logging()
 
     def setup_logging(self):
@@ -31,6 +63,7 @@ class MoniariLog:
         self.logger = logging.getLogger(self.logger_name)
         self.logger.setLevel(getattr(logging, self.log_level, logging.DEBUG))
 
+        # Formatter para logs coloridos no console ou arquivo
         formatter = colorlog.ColoredFormatter(
             "%(log_color)s%(asctime)s - [%(name)s] - %(levelname)s - %(message)s",
             datefmt=None,
@@ -44,22 +77,38 @@ class MoniariLog:
             }
         )
 
+        # Formatter para Kafka, sem cores
+        kafka_formatter = logging.Formatter(
+            '%(asctime)s - [%(name)s] - %(levelname)s - %(message)s'
+        )
+
         any_log_active = False
 
         if self.config.get('log_to_file') and self.config['log_file']:
             any_log_active = True
-            file_handler = logging.FileHandler(self.config['log_file'], encoding='utf-8')
+            file_handler = logging.FileHandler(
+                self.config['log_file'], encoding='utf-8'
+            )
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
 
-        if self.config.get('log_to_kafka') and isinstance(self.config.get('kafka_bootstrap_servers'), list) and self.config.get('kafka_topic'):
-            any_log_active = True
-            self.kafka_producer = KafkaProducer(
-                bootstrap_servers=self.config['kafka_bootstrap_servers'],
-                value_serializer=lambda v: json.dumps(v).encode('utf-8')
-        )
-        self.kafka_topic = self.config['kafka_topic']
+        if self.config.get('log_to_kafka'):
+            if isinstance(self.config.get('kafka_bootstrap_servers'), list) and self.config.get('kafka_topic'):
+                any_log_active = True
+                self.kafka_producer = KafkaProducer(
+                    bootstrap_servers=self.config['kafka_bootstrap_servers'],
+                    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+                )
+                self.kafka_topic = self.config['kafka_topic']
+                kafka_handler = KafkaLoggingHandler(self.kafka_producer, self.kafka_topic)
+                kafka_handler.setFormatter(kafka_formatter)
+                self.logger.addHandler(kafka_handler)
+            else:
+                self.logger.warning(
+                    "Configuração incompleta para o log no Kafka. "
+                    "Verifique as configurações 'kafka_bootstrap_servers' e 'kafka_topic'."
+                )
 
         if not any_log_active or self.config.get('log_to_stderr', False):
             stderr_handler = logging.StreamHandler(sys.stderr)
@@ -68,7 +117,9 @@ class MoniariLog:
             self.logger.addHandler(stderr_handler)
 
             if not any_log_active:
-                self.logger.warning("Nenhuma configuração de log encontrada, utilizando stderr como padrão.")
+                self.logger.warning(
+                    "Nenhuma configuração de log encontrada, utilizando stderr como padrão."
+                )
 
     def info(self, message):
         """
@@ -125,14 +176,11 @@ class MoniariLog:
         """
         getattr(self.logger, level.lower())(message)
 
-        if self.config.get('log_to_kafka') and hasattr(self, 'kafka_producer'):
-            self.kafka_producer.send(self.kafka_topic, {'level': level, 'message': message})
-
     def close(self):
         """
         Fecha todos os handlers e libera recursos.
         """
-        if hasattr(self, 'kafka_producer'):
+        if self.kafka_producer:
             self.kafka_producer.close()
         for handler in self.logger.handlers:
             handler.close()
