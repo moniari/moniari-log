@@ -2,6 +2,18 @@
 
 Pacote de logging para uso interno da empresa, proporcionando uma interface de log simples e direta. Suporta gravação de logs em arquivos, saída padrão de erro (stderr) e integração com o Kafka para distribuição em um ambiente de mensageria. Configurável para diferentes ambientes como desenvolvimento e produção através de arquivos JSON.
 
+# ** Observação ** 21/08/2024
+
+Foi necessario a utilização do codigo a baixo para compatibilizar o kafka-python 2.0.2 para Python 3.12. Quando for atualizado o kafka-python deverá ser avaliado se a solução ainda é necessaria.
+
+```python
+# Compatibilidade kafka-python 2.0.2 para Python 3.12
+import six
+if sys.version_info >= (3, 12, 0):
+    sys.modules['kafka.vendor.six.moves'] = six.moves
+from kafka import KafkaProducer
+```
+
 ## Instalação
 
 Para instalar o pacote diretamente do repositório Git, use o [Poetry](https://python-poetry.org/):
@@ -49,7 +61,7 @@ O pacote Moniari-Log utiliza um arquivo de configuração JSON para definir as o
 
 ## Uso
 
-###Configuração Global do Logger
+### Configuração Global do Logger
 
 Para configurar o Moniari-Log globalmente no seu projeto, você pode utilizar a classe LoggerConfig definida no arquivo log_setup.py. Essa classe facilita a configuração e inicialização do logger em diferentes ambientes.
 
@@ -133,4 +145,7 @@ Para executar os testes, utilize o comando:
 poetry run python -m unittest discover -s tests
 ```
 Isso irá descobrir e executar todos os testes na pasta tests.
+
+
+
 

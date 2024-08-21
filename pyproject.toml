@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "moniari-log"
-version = "0.1.2"
+version = "0.1.3"
 description = "Pacote de logging para uso interno da empresa, proporcionando uma interface de log simples e direta. Suporta gravação de logs em arquivos, saída padrão de erro (stderr) e integração com o Kafka para distribuição em um ambiente de mensageria. Configurável para diferentes ambientes como desenvolvimento e produção através de arquivos JSON."
 authors = ["Vinicius Piassa <vinicius@moniari.com.br>"]
 readme = "README.md"
@@ -9,9 +9,10 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
-kafka-python = "^2.0.2"
+python = "^3.12"
 colorlog = "^6.8.2"
+kafka-python = "^2.0.2"
+six = "^1.16.0"
 
 
 [build-system]

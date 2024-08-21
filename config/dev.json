@@ -6,7 +6,7 @@
         "kafka_bootstrap_servers": [
             "localhost:9092"
         ],
-        "kafka_topic": "logs",
+        "kafka_topic": "test_topic",
         "logger_name": "moniari_log",
         "log_level": "DEBUG"
     }

@@ -2,6 +2,7 @@ import unittest
 import os
 import json
 import shutil
+from unittest.mock import patch, MagicMock
 from src.moniari_log.logger import MoniariLog
 
 class TestMoniariLog(unittest.TestCase):
@@ -13,7 +14,6 @@ class TestMoniariLog(unittest.TestCase):
         self.log_file = os.path.join(self.log_dir, 'data_transfer.log')
         self.logger = None
 
-        # Certifique-se de que o arquivo de log não existe antes do teste
         if os.path.exists(self.log_file):
             os.remove(self.log_file)
 
@@ -56,6 +56,36 @@ class TestMoniariLog(unittest.TestCase):
         self.assertTrue(os.path.isfile(self.log_file), f"Arquivo de log {self.log_file} não foi criado.")
         self._check_log_contents('ERROR', 'This is an error message for file logging')
 
+    @patch('src.moniari_log.logger.KafkaProducer')
+    def test_info_log_to_kafka(self, MockKafkaProducer):
+        """
+        Testa se uma mensagem de log INFO é enviada corretamente para o Kafka.
+        """
+        mock_producer = MockKafkaProducer.return_value
+        self._set_log_config(log_to_file=False, log_to_kafka=True)
+        self.logger = MoniariLog(config_file=self.config_file)
+        self.logger.info('This is an info message for Kafka logging')
+        mock_producer.send.assert_called_once_with(self.logger.kafka_topic, {
+            'level': 'info',
+            'message': 'This is an info message for Kafka logging'
+        })
+        self.logger.close()
+
+    @patch('src.moniari_log.logger.KafkaProducer')
+    def test_error_log_to_kafka(self, MockKafkaProducer):
+        """
+        Testa se uma mensagem de log ERROR é enviada corretamente para o Kafka.
+        """
+        mock_producer = MockKafkaProducer.return_value
+        self._set_log_config(log_to_file=False, log_to_kafka=True)
+        self.logger = MoniariLog(config_file=self.config_file)
+        self.logger.error('This is an error message for Kafka logging')
+        mock_producer.send.assert_called_once_with(self.logger.kafka_topic, {
+            'level': 'error',
+            'message': 'This is an error message for Kafka logging'
+        })
+        self.logger.close()
+
     def _set_log_config(self, log_to_file, log_to_kafka):
         """
         Modifica o arquivo de configuração para o teste.
@@ -65,10 +95,11 @@ class TestMoniariLog(unittest.TestCase):
         config['log']['log_to_file'] = log_to_file
         config['log']['log_to_kafka'] = log_to_kafka
         config['log']['log_file'] = 'logs/data_transfer.log'
+        config['log']['kafka_bootstrap_servers'] = ['localhost:9092']
+        config['log']['kafka_topic'] = 'test_topic'
         with open(self.config_file, 'w', encoding='utf-8') as file:
             json.dump(config, file, indent=4)
 
-        # Certifique-se de que as variáveis de ambiente não estejam interferindo
         os.environ.pop('LOG_TO_FILE', None)
         os.environ.pop('LOG_TO_KAFKA', None)
         os.environ.pop('LOG_FILE', None)
@@ -91,18 +122,18 @@ class TestMoniariLog(unittest.TestCase):
         if os.path.exists(self.log_file):
             os.remove(self.log_file)
 
-        # Remover diretórios __pycache__ dentro do diretório de testes e src
         for dirpath, dirnames, filenames in os.walk(os.path.dirname(__file__)):
             for dirname in dirnames:
                 if dirname == '__pycache__':
                     shutil.rmtree(os.path.join(dirpath, dirname))
         
-        # Também limpar __pycache__ no diretório src
         src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
         for dirpath, dirnames, filenames in os.walk(src_dir):
             for dirname in dirnames:
                 if dirname == '__pycache__':
                     shutil.rmtree(os.path.join(dirpath, dirname))
+        
+        src_dir = os.path
 
 if __name__ == '__main__':
     unittest.main()

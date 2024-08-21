@@ -29,7 +29,6 @@ def load_config(config_file):
     """
     config = {}
 
-    # Primeiramente carregar as variáveis de ambiente
     config['log_to_file'] = get_env_bool('LOG_TO_FILE')
     config['log_file'] = os.getenv('LOG_FILE')
     config['log_to_kafka'] = get_env_bool('LOG_TO_KAFKA')

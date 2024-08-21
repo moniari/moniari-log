@@ -1,10 +1,14 @@
 import logging
-from kafka import KafkaProducer
 import json
 import sys
 import colorlog
 from .config import load_config
 
+# Compatibilidade kafka-python 2.0.2 para Python 3.12
+import six
+if sys.version_info >= (3, 12, 0):
+    sys.modules['kafka.vendor.six.moves'] = six.moves
+from kafka import KafkaProducer
 
 class MoniariLog:
     """
@@ -49,13 +53,13 @@ class MoniariLog:
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
 
-        if self.config.get('log_to_kafka') and self.config['kafka_bootstrap_servers'] and self.config['kafka_topic']:
+        if self.config.get('log_to_kafka') and isinstance(self.config.get('kafka_bootstrap_servers'), list) and self.config.get('kafka_topic'):
             any_log_active = True
             self.kafka_producer = KafkaProducer(
-                bootstrap_servers=self.config['kafka_bootstrap_servers'].split(','),
+                bootstrap_servers=self.config['kafka_bootstrap_servers'],
                 value_serializer=lambda v: json.dumps(v).encode('utf-8')
-            )
-            self.kafka_topic = self.config['kafka_topic']
+        )
+        self.kafka_topic = self.config['kafka_topic']
 
         if not any_log_active or self.config.get('log_to_stderr', False):
             stderr_handler = logging.StreamHandler(sys.stderr)
