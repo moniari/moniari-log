@@ -4,10 +4,11 @@ Pacote de logging para uso interno da empresa, proporcionando uma interface de l
 
 ## Instalação
 
-Para instalar o pacote, use o [Poetry](https://python-poetry.org/):
+Para instalar o pacote diretamente do repositório Git, use o [Poetry](https://python-poetry.org/):
+
 
 ```bash
-poetry add moniari-log
+poetry add git+https://github.com/moniari/moniari-log.git
 ```
 
 ## Configuração
@@ -47,26 +48,57 @@ O pacote Moniari-Log utiliza um arquivo de configuração JSON para definir as o
 ```
 
 ## Uso
-Para utilizar o Moniari-Log em seu projeto, você pode importar a classe MoniariLog e configurá-la para usar o arquivo de configuração desejado. A estrutura de diretórios deve conter uma pasta config dentro do diretório principal do projeto, onde devem estar os arquivos de configuração JSON (dev.json e prod.json).
+
+###Configuração Global do Logger
+
+Para configurar o Moniari-Log globalmente no seu projeto, você pode utilizar a classe LoggerConfig definida no arquivo log_setup.py. Essa classe facilita a configuração e inicialização do logger em diferentes ambientes.
 
 ### Exemplo de uso
 
 ```python
-import os
-from moniari_log.logger import MoniariLog
+from pathlib import Path
+from moniari_log import MoniariLog
 
-# Define o caminho para o arquivo de configuração do novo projeto
-config_file_path = os.path.join(os.path.dirname(__file__), 'config/dev.json')
+class LoggerConfig:
+    def __init__(self, config_file: str = "config/dev.json"):
+        """
+        Inicializa a configuração do logger com o caminho do arquivo de configuração especificado.
 
-# Cria uma instância do MoniariLog com o arquivo de configuração do novo projeto
-logger = MoniariLog(config_file=config_file_path)
+        Parâmetros:
+            config_file (str): Caminho relativo para o arquivo de configuração.
+        """
+        # Obtenha o diretório atual de trabalho
+        current_working_directory = Path.cwd()
+        
+        # Construa o caminho absoluto para o arquivo de configuração baseado no cwd
+        self.config_file_path = current_working_directory / config_file
+
+        self.logger = self.setup_logger()
+
+    def setup_logger(self) -> MoniariLog:
+        """
+        Configura e retorna o logger MoniariLog.
+
+        Retorna:
+            MoniariLog: Instância configurada do logger.
+        """
+        logger = MoniariLog(config_file=str(self.config_file_path))
+        logger.debug(f"Logger configurado com o arquivo: {self.config_file_path}")
+        return logger
+    
+# Instancia e configura o logger para uso global
+logger = LoggerConfig().logger
+```
+
+## Exemplo de Uso
+Após configurar o logger globalmente com log_setup.py, você pode utilizá-lo em qualquer lugar do seu projeto da seguinte forma:
+
+```python
+from log_setup import logger
 
 # Usa o logger para registrar mensagens
 logger.info("This is an info message from my new project")
 logger.error("This is an error message from my new project")
-
-# Fecha o logger ao finalizar
-logger.close()
 ```
 
 ## Variáveis de Ambiente
